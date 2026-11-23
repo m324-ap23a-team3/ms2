@@ -18,6 +18,22 @@ dotnet test                           # braucht keine Datenbank
 
 Health-Check: `GET /health`
 
+## API
+
+| Endpunkt | Beschreibung |
+|---|---|
+| `POST /api/tickets` | US3: Ticket erfassen. `status` (`Open`, `InProgress`, `Review`, `Done`), `titel` und `mitarbeiterId` sind Pflicht, `beschreibung` ist optional. `201` mit dem Ticket, `400` mit einer Meldung pro Feld, `503` wenn MS1 oder die Datenbank nicht erreichbar ist |
+
+```bash
+curl -X POST localhost:5217/api/tickets -H 'Content-Type: application/json'   -d '{"status":"Open","titel":"Drucker defekt","beschreibung":"2. Stock","mitarbeiterId":1}'
+```
+
+Der Mitarbeiter wird über MS1 geprüft. Bis der HTTP-Client aus ms2#3 da ist, antwortet der Endpunkt ausserhalb der Tests mit `503`. Review- und Done-Datum folgen mit ms2#5.
+
+## Architektur
+
+Endpoints → `TicketService` → `ITicketRepository` (EF Core/MariaDB) und `IMitarbeiterClient` (MS1). Die Tests ersetzen beide durch Fakes und laufen ohne Datenbank und ohne MS1.
+
 ## Datenbank
 
 | | |
