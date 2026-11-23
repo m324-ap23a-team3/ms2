@@ -1,8 +1,13 @@
+using Ms2.Api.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+builder.Services.AddMs2Datenbank(builder.Configuration);
 
 var app = builder.Build();
+
+await app.MigriereDatenbankFallsAktiviertAsync();
 
 if (app.Environment.IsDevelopment())
 {
