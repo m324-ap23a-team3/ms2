@@ -1,0 +1,26 @@
+# Lokale Datenbank fuer MS2 (nur Entwicklung).
+# Start: docker compose up -d   ·   Stopp: docker compose down   ·   Daten loeschen: docker compose down -v
+# Das Passwort gilt nur fuer die lokale DB. In Staging/Produktion kommt der Connection-String
+# als Secret ueber die Umgebungsvariable ConnectionStrings__Ms2Db (P4).
+# Host-Port 3307, damit die DB neben der von MS1 (3306) laufen kann.
+services:
+  ms2-db:
+    image: mariadb:11.4
+    container_name: ms2-db
+    environment:
+      MARIADB_DATABASE: ms2
+      MARIADB_USER: ms2
+      MARIADB_PASSWORD: ${MS2_DB_PASSWORT:-ms2-lokal}
+      MARIADB_ROOT_PASSWORD: ${MS2_DB_ROOT_PASSWORT:-ms2-root-lokal}
+    ports:
+      - "${MS2_DB_PORT:-3307}:3306"
+    volumes:
+      - ms2-db-daten:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  ms2-db-daten:
