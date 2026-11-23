@@ -25,16 +25,21 @@ public static class DatenbankExtensions
                 ?? throw new InvalidOperationException(
                     $"Connection-String '{ConnectionStringName}' fehlt. Setze ihn in appsettings oder als Umgebungsvariable ConnectionStrings__{ConnectionStringName}.");
 
-            // Wiederholt Verbindungsfehler, z. B. wenn der DB-Container beim Start noch nicht bereit ist
-            options.UseMySql(connectionString, ServerVersion, mysql => mysql.EnableRetryOnFailure());
+            // Wiederholt kurze Verbindungsfehler. Bewusst knapp (3 Versuche, max. 5 s) wie in MS1, damit ein Client
+            // bei einer ausgefallenen DB nach Sekunden eine 503-Meldung bekommt statt nach über einer Minute.
+            options.UseMySql(connectionString, ServerVersion, mysql =>
+                mysql.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorNumbersToAdd: null));
         });
+
+        services.AddScoped<ITicketRepository, TicketRepository>();
 
         return services;
     }
 
     /// <summary>
     /// Wendet beim Start ausstehende Migrationen an, wenn <c>Datenbank:MigrationBeimStart</c> auf <c>true</c> steht
-    /// (lokal und im Container). In den Tests ist es aus.
+    /// (lokal in <c>appsettings.Development.json</c>; im Container über die Umgebungsvariable
+    /// <c>Datenbank__MigrationBeimStart=true</c>). In den Tests ist es aus.
     /// </summary>
     public static async Task MigriereDatenbankFallsAktiviertAsync(this WebApplication app)
     {
